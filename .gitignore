@@ -1,0 +1,7 @@
+*.vo
+*.mli
+*.glob
+.*.aux
+.*.d
+*.vos
+*.vok
