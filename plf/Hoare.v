@@ -360,7 +360,9 @@ Theorem hoare_post_true : forall (P Q : Assertion) c,
   (forall st, Q st) ->
   {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold valid_hoare_triple. intros.
+  apply H.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (hoare_pre_false) *)
@@ -372,7 +374,9 @@ Theorem hoare_pre_false : forall (P Q : Assertion) c,
   (forall st, ~ (P st)) ->
   {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold valid_hoare_triple. intros.
+  apply H in H1. destruct H1.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -650,7 +654,10 @@ Example hoare_asgn_examples1 :
       X := 2 * X
     {{ X <= 10 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eexists. apply hoare_asgn.
+  Restart.
+  exists ((X <= 10) [X |-> 2 * X])%assertion.
+  apply hoare_asgn. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (hoare_asgn_examples2) *)
@@ -659,7 +666,11 @@ Example hoare_asgn_examples2 :
     {{ P }}
       X := 3
     {{ 0 <=  X /\ X <= 5 }}.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  eexists. apply hoare_asgn.
+  Restart.
+  exists ((0 <=  X /\ X <= 5) [X |-> 3]). apply hoare_asgn.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, especially useful (hoare_asgn_wrong)
@@ -681,10 +692,13 @@ Proof. (* FILL IN HERE *) Admitted.
 Theorem hoare_asgn_wrong : exists a:aexp,
   ~ {{ True }} X := a {{ X = a }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(* FILL IN HERE
-
-    [] *)
+  exists <{ X + 1 }>. intro Hc.
+  unfold valid_hoare_triple in Hc.
+  specialize (Hc (t_empty 0) (X !-> 1; t_empty 0)).
+  simpl in Hc. rewrite t_update_eq in Hc.
+  assert (1 = 2); try lia. apply Hc; auto.
+  constructor. simpl. auto.
+Qed.
 
 (** **** Exercise: 3 stars, advanced (hoare_asgn_fwd)
 
@@ -712,7 +726,12 @@ Theorem hoare_asgn_fwd :
   {{fun st => P (X !-> m ; st)
            /\ st X = aeval (X !-> m ; st) a }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold valid_hoare_triple. intros.
+  destruct H0. inversion H; subst. rewrite t_update_shadow.
+  split.
+  - rewrite t_update_same. auto.
+  - rewrite t_update_same. rewrite t_update_eq. auto.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_asgn_fwd_exists)
@@ -735,7 +754,12 @@ Theorem hoare_asgn_fwd_exists :
   {{fun st => exists m, P (X !-> m ; st) /\
                 st X = aeval (X !-> m ; st) a }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold valid_hoare_triple. intros.
+  inversion H; subst.
+  exists (st X).
+  rewrite t_update_eq. rewrite t_update_shadow. rewrite t_update_same.
+  intuition.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -1068,14 +1092,18 @@ Example assertion_sub_ex1' :
     X := 2 * X
   {{ X <= 10 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - assertion_auto. Qed.
 
 Example assertion_sub_ex2' :
   {{ 0 <= 3 /\ 3 <= 5 }}
     X := 3
   {{ 0 <= X /\ X <= 5 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - assertion_auto. Qed.
 
 (** [] *)
 
@@ -1139,8 +1167,15 @@ Example hoare_asgn_example4 :
   {{ X = 1 /\ Y = 2 }}.
 Proof.
   eapply hoare_seq with (Q := (X = 1)%assertion).
+  + simpl.
+    eapply hoare_consequence_pre.
+    - apply hoare_asgn.
+    - assertion_auto.
+  + eapply hoare_consequence_pre.
+    - apply hoare_asgn.
+    - assertion_auto.
+Qed.
   (* The annotation [%assertion] is needed to help Coq parse correctly. *)
-  (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (swap_exercise)
