@@ -2054,13 +2054,15 @@ Proof. eauto. Qed.
     [havoc_pre], and prove that the resulting rule is correct. *)
 
 Definition havoc_pre (X : string) (Q : Assertion) (st : total_map nat) : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  := forall m, Q (X !-> m; st).
+(* Intuition: the precondition has to hold for any value of X, before X can be havoced. *)
 
 Theorem hoare_havoc : forall (Q : Assertion) (X : string),
   {{ havoc_pre X Q }} havoc X {{ Q }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold havoc_pre, valid_hoare_triple. intros Q X st st' Hc HQ.
+  inversion Hc; subst; clear Hc. apply HQ.
+Qed.
 
 (** **** Exercise: 3 stars, advanced (havoc_post)
 
@@ -2077,9 +2079,10 @@ Theorem havoc_post : forall (P : Assertion) (X : string),
 Proof.
   intros P X. eapply hoare_consequence_pre.
   - apply hoare_havoc.
-  - (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  - unfold "->>", havoc_pre, assertion_sub. intros st Hst m.
+    exists (st X).
+    rewrite t_update_shadow. simpl. rewrite t_update_same. auto.
+Qed.
 
 End Himp.
 
